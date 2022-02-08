@@ -124,6 +124,9 @@ var ErrBadStopBits error = errors.New("unsupported stop bit setting")
 // ErrBadParity is returned if the parity is not supported.
 var ErrBadParity error = errors.New("unsupported parity setting")
 
+// ErrBadBaudRate is returned if the requested baud rate is not supported.
+var ErrBadBaudRate error = errors.New("unsupported baud rate")
+
 // OpenPort opens a serial port with the specified configuration
 func OpenPort(c *Config) (*Port, error) {
 	size, par, stop := c.Size, c.Parity, c.StopBits

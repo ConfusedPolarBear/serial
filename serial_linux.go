@@ -1,9 +1,8 @@
-// +build linux
+//go:build linux
 
 package serial
 
 import (
-	"fmt"
 	"os"
 	"time"
 	"unsafe"
@@ -48,7 +47,7 @@ func openPort(name string, baud int, databits byte, parity Parity, stopbits Stop
 	rate, ok := bauds[baud]
 
 	if !ok {
-		return nil, fmt.Errorf("Unrecognized baud rate")
+		return nil, ErrBadBaudRate
 	}
 
 	f, err := os.OpenFile(name, unix.O_RDWR|unix.O_NOCTTY|unix.O_NONBLOCK, 0666)
@@ -76,6 +75,7 @@ func openPort(name string, baud int, databits byte, parity Parity, stopbits Stop
 	default:
 		return nil, ErrBadSize
 	}
+
 	// Stop bits settings
 	switch stopbits {
 	case Stop1:
@@ -86,6 +86,7 @@ func openPort(name string, baud int, databits byte, parity Parity, stopbits Stop
 		// Don't know how to set 1.5
 		return nil, ErrBadStopBits
 	}
+
 	// Parity settings
 	switch parity {
 	case ParityNone:
@@ -98,6 +99,7 @@ func openPort(name string, baud int, databits byte, parity Parity, stopbits Stop
 	default:
 		return nil, ErrBadParity
 	}
+
 	fd := f.Fd()
 	vmin, vtime := posixTimeoutValues(readTimeout)
 	t := unix.Termios{
@@ -156,7 +158,7 @@ func (p *Port) Flush() error {
 	return errno
 }
 
-func (p *Port) GetStatus() (n uint, err error) {
+func (p *Port) GetStatus() (uint, error) {
 	var status uint
 	if _, _, errno := unix.Syscall(
 		unix.SYS_IOCTL,
@@ -170,41 +172,37 @@ func (p *Port) GetStatus() (n uint, err error) {
 	}
 }
 
-func (p *Port) SetDTR(v byte) (err error) {
-	req := unix.TIOCMBIS
-	if 0 == v {
+// Set the state of the DTR signal.
+func (p *Port) SetDTR(state bool) error {
+	var req uint = unix.TIOCMBIS
+	if !state {
 		req = unix.TIOCMBIC
 	}
-	var m uint = unix.TIOCM_DTR
-	if _, _, errno := unix.Syscall(
-		unix.SYS_IOCTL,
-		uintptr(p.f.Fd()),
-		uintptr(req),
-		uintptr(unsafe.Pointer(&m)),
-	); errno != 0 {
-		return errno
-	} else {
-		return nil
-	}
+
+	return p.setSignal(req, unix.TIOCM_DTR)
 }
 
-
-func (p *Port) SetRTS(v byte) (err error) {
-	req := unix.TIOCMBIS
-	if 0 == v {	
+// Set the state of the RTS signal.
+func (p *Port) SetRTS(state bool) error {
+	var req uint = unix.TIOCMBIS
+	if !state {
 		req = unix.TIOCMBIC
 	}
-	var m uint = unix.TIOCM_RTS
+
+	return p.setSignal(req, unix.TIOCM_RTS)
+}
+
+func (p *Port) setSignal(signal, state uint) error {
 	if _, _, errno := unix.Syscall(
 		unix.SYS_IOCTL,
 		uintptr(p.f.Fd()),
-		uintptr(req),
-		uintptr(unsafe.Pointer(&m)),
+		uintptr(signal),
+		uintptr(unsafe.Pointer(&state)),
 	); errno != 0 {
 		return errno
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (p *Port) Close() (err error) {
