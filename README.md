@@ -1,10 +1,10 @@
-[![GoDoc](https://godoc.org/github.com/tarm/serial?status.svg)](http://godoc.org/github.com/tarm/serial)
-[![Build Status](https://travis-ci.org/tarm/serial.svg?branch=master)](https://travis-ci.org/tarm/serial)
+[![GoDoc](https://pkg.go.dev/badge/github.com/ConfusedPolarBear/serial.svg)](https://pkg.go.dev/github.com/ConfusedPolarBear/serial)
 
 Serial
 ========
-A Go package to allow you to read and write from the
-serial port as a stream of bytes.
+A Go package to allow you to read and write from a
+serial port as a stream of bytes. Forked from
+[tarm's serial library](https://github.com/tarm/serial).
 
 Details
 -------
@@ -13,7 +13,7 @@ an added bonus, the windows package does not use cgo, so you can cross
 compile for windows from another platform.
 
 You can cross compile with
-   GOOS=windows GOARCH=386 go install github.com/tarm/serial
+   GOOS=windows GOARCH=386 go install github.com/ConfusedPolarBear/serial
 
 Currently there is very little in the way of configurability.  You can
 set the baud rate.  Then you can Read(), Write(), or Close() the
@@ -36,7 +36,7 @@ package main
 import (
         "log"
 
-        "github.com/tarm/serial"
+        "github.com/ConfusedPolarBear/serial"
 )
 
 func main() {
@@ -62,12 +62,11 @@ func main() {
 
 NonBlocking Mode
 ----------------
-By default the returned Port reads in blocking mode. Which means
-`Read()` will block until at least one byte is returned. If that's not
-what you want, specify a positive ReadTimeout and the Read() will
-timeout returning 0 bytes if no bytes are read.  Please note that this
-is the total timeout the read operation will wait and not the interval
-timeout between two bytes.
+By default the returned Port reads in blocking mode. If that's not
+what you want, specify a positive ReadTimeout and Read() will timeout
+and return 0 bytes if nothing is read. Note that this is the total
+timeout for the read operation and not the interval timeout
+between two bytes.
 
 ```go
 	c := &serial.Config{Name: "COM45", Baud: 115200, ReadTimeout: time.Second * 5}
